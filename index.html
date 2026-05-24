@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AMA">
+<title>AMA - Auto Marking App</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #14141f;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --muted: #8888a0;
+    --orange: #ff8c32;
+    --cyan: #00d4ff;
+    --purple: #7c5cfc;
+    --green: #22cc88;
+    --red: #ff4466;
+    --safe: env(safe-area-inset-bottom, 20px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Header */
+  .header {
+    padding: 12px 20px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .header h1 {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--orange), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header .badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: var(--purple);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  /* Steps */
+  .steps {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding: 16px 20px 12px;
+  }
+  .step-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--border);
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+  .step-dot.active { background: var(--purple); color: #fff; }
+  .step-dot.done { background: var(--green); color: #fff; }
+  .step-line {
+    width: 30px; height: 2px;
+    background: var(--border);
+    align-self: center;
+    transition: background 0.3s;
+  }
+  .step-line.active { background: var(--purple); }
+  .step-label {
+    font-size: 9px;
+    text-align: center;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .step-label.active { color: var(--text); }
+
+  /* Input Section */
+  .section {
+    padding: 16px 20px;
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .input-group {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .input-card {
+    flex: 1;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .input-card.width-card { border-color: var(--orange); }
+  .input-card.depth-card { border-color: var(--cyan); }
+  .input-card label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .input-card .color-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+  .input-card input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+  }
+  .input-card .unit {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* Result Cards */
+  .result-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .result-card {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+  .result-card .label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .result-card .value { font-size: 18px; font-weight: 700; }
+  .result-card .value.green { color: var(--green); }
+  .result-card .value.purple { color: var(--purple); }
+  .result-card .value.orange { color: var(--orange); }
+
+  /* Diagram */
+  .diagram-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin: 0 20px 16px;
+  }
+  .diagram-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .diagram-canvas-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.2;
+  }
+  .diagram-canvas-wrap canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Camera Overlay */
+  .camera-section {
+    margin: 0 20px 16px;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background: #000;
+  }
+  .camera-section video {
+    width: 100%;
+    display: block;
+  }
+  .camera-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+  .camera-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0 20px 16px;
+    width: calc(100% - 40px);
+    transition: all 0.3s;
+  }
+  .camera-btn:active { border-color: var(--purple); color: var(--text); }
+  .camera-btn.active { border-color: var(--green); color: var(--green); }
+
+  /* Point List */
+  .point-list {
+    margin: 0 20px 16px;
+  }
+  .point-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+  }
+  .point-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .point-num.center { background: var(--red); }
+  .point-num.corner { background: var(--orange); }
+  .point-info { flex: 1; }
+  .point-info .name { font-size: 13px; font-weight: 600; }
+  .point-info .coords { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* Button */
+  .primary-btn {
+    display: block;
+    width: calc(100% - 40px);
+    margin: 0 20px 16px;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .primary-btn:active { transform: scale(0.97); opacity: 0.9; }
+  .primary-btn.purple { background: linear-gradient(135deg, var(--purple), #5a3fd4); }
+  .primary-btn.green { background: linear-gradient(135deg, var(--green), #18a870); }
+  .primary-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+  /* Share/Export */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin: 0 20px 16px;
+  }
+  .action-btn {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.3s;
+  }
+  .action-btn:active { border-color: var(--purple); }
+
+  /* Bottom safe area */
+  .bottom-safe { height: var(--safe); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Spacing info */
+  .spacing-info {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 0 20px 16px;
+  }
+  .spacing-info .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+  }
+  .spacing-info .row .label { font-size: 12px; color: var(--muted); }
+  .spacing-info .row .value { font-size: 13px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AMA</h1>
+  <span class="badge">Auto Marking App</span>
+</div>
+
+<!-- Steps -->
+<div class="steps" id="steps">
+  <div>
+    <div class="step-dot active" id="step1">1</div>
+    <div class="step-label active">치수입력</div>
+  </div>
+  <div class="step-line" id="line1"></div>
+  <div>
+    <div class="step-dot" id="step2">2</div>
+    <div class="step-label">포인트계산</div>
+  </div>
+  <div class="step-line" id="line2"></div>
+  <div>
+    <div class="step-dot" id="step3">3</div>
+    <div class="step-label">현장확인</div>
+  </div>
+</div>
+
+<!-- Step 1: 치수 입력 -->
+<div id="page1">
+  <div class="section">
+    <div class="section-title">바닥 치수 입력</div>
+    <div class="input-group">
+      <div class="input-card width-card">
+        <label><span class="color-dot" style="background:var(--orange)"></span>가로 (m)</label>
+        <input type="number" id="widthInput" step="0.01" min="0.5" placeholder="0.00" inputmode="decimal">
+      </div>
+      <div class="input-card depth-card">
+        <label><span class="color-dot" style="background:var(--cyan)"></span>세로 (m)</label>
+        <input type="number" id="depthInput" step="0.01" min="0.5" placeholder="0.00" inputmode="decimal">
+      </div>
+    </div>
+  </div>
+
+  <button class="primary-btn purple" id="calcBtn" disabled onclick="calculate()">
+    포인트 계산하기
+  </button>
+</div>
+
+<!-- Step 2: 결과 -->
+<div id="page2" style="display:none">
+  <div class="section" style="padding-bottom:8px">
+    <div class="result-row">
+      <div class="result-card">
+        <div class="label">면적</div>
+        <div class="value green mono" id="areaValue">--</div>
+      </div>
+      <div class="result-card">
+        <div class="label">간격</div>
+        <div class="value purple mono" id="spacingValue">--</div>
+      </div>
+      <div class="result-card">
+        <div class="label">대각선</div>
+        <div class="value orange mono" id="diagValue">--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacing-info" id="spacingInfo"></div>
+
+  <div class="diagram-container">
+    <div class="diagram-title">포인트 배치도 (역Z 패턴)</div>
+    <div class="diagram-canvas-wrap">
+      <canvas id="diagramCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="section-title" style="padding:0 20px;margin-bottom:8px">포인트 좌표</div>
+  <div class="point-list" id="pointList"></div>
+
+  <button class="primary-btn green" onclick="goToStep3()">
+    📷 카메라로 현장 확인
+  </button>
+
+  <div class="action-row">
+    <button class="action-btn" onclick="shareResult()">📤 결과 공유</button>
+    <button class="action-btn" onclick="resetAll()">🔄 다시 측정</button>
+  </div>
+</div>
+
+<!-- Step 3: 카메라 오버레이 -->
+<div id="page3" style="display:none">
+  <div class="section" style="padding-bottom:8px">
+    <div class="result-row">
+      <div class="result-card">
+        <div class="label">가로</div>
+        <div class="value mono" id="camWidth" style="color:var(--orange)">--</div>
+      </div>
+      <div class="result-card">
+        <div class="label">세로</div>
+        <div class="value mono" id="camDepth" style="color:var(--cyan)">--</div>
+      </div>
+      <div class="result-card">
+        <div class="label">간격</div>
+        <div class="value mono" id="camSpacing" style="color:var(--green)">--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="camera-section" id="cameraSection">
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <canvas class="camera-overlay" id="cameraOverlay"></canvas>
+  </div>
+
+  <div class="diagram-container">
+    <div class="diagram-title">포인트 배치도</div>
+    <div class="diagram-canvas-wrap">
+      <canvas id="diagramCanvas2"></canvas>
+    </div>
+  </div>
+
+  <div class="action-row">
+    <button class="action-btn" onclick="goToStep2()">← 결과로 돌아가기</button>
+    <button class="action-btn" onclick="resetAll()">🔄 다시 측정</button>
+  </div>
+</div>
+
+<div class="bottom-safe"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// State
+let state = {
+  width: 0,
+  depth: 0,
+  area: 0,
+  spacing: 0,
+  points: [],
+  diagonal: 0,
+};
+
+// Input validation
+const widthInput = document.getElementById('widthInput');
+const depthInput = document.getElementById('depthInput');
+const calcBtn = document.getElementById('calcBtn');
+
+function checkInputs() {
+  const w = parseFloat(widthInput.value);
+  const d = parseFloat(depthInput.value);
+  calcBtn.disabled = !(w > 0 && d > 0);
+}
+widthInput.addEventListener('input', checkInputs);
+depthInput.addEventListener('input', checkInputs);
+
+// Calculate
+function calculate() {
+  const w = parseFloat(widthInput.value);
+  const d = parseFloat(depthInput.value);
+  if (!w || !d) return;
+
+  state.width = w;
+  state.depth = d;
+  state.area = w * d;
+  state.spacing = state.area < 14 ? 0.50 : 0.75;
+
+  const s = state.spacing;
+  const sw = Math.min(s, w / 3);
+  const sd = Math.min(s, d / 3);
+
+  // 역Z 패턴: 1(우상), 2(좌상), 3(중앙), 4(우하), 5(좌하)
+  const p1 = { id: 1, label: '우상', x: w - sw, y: sd };
+  const p2 = { id: 2, label: '좌상', x: sw, y: sd };
+  const p4 = { id: 4, label: '우하', x: w - sw, y: d - sd };
+  const p5 = { id: 5, label: '좌하', x: sw, y: d - sd };
+  // 3번 = midpoint(1, 5) = midpoint(2, 4)
+  const p3 = { id: 3, label: '중앙', x: (p1.x + p5.x) / 2, y: (p1.y + p5.y) / 2 };
+
+  state.points = [p1, p2, p3, p4, p5];
+  state.diagonal = Math.sqrt(
+    Math.pow(p1.x - p5.x, 2) + Math.pow(p1.y - p5.y, 2)
+  );
+
+  showStep(2);
+  renderResults();
+  drawDiagram('diagramCanvas');
+}
+
+// Render results
+function renderResults() {
+  document.getElementById('areaValue').textContent = state.area.toFixed(1) + 'm²';
+  document.getElementById('spacingValue').textContent = state.spacing.toFixed(2) + 'm';
+  document.getElementById('diagValue').textContent = state.diagonal.toFixed(2) + 'm';
+
+  const sw = Math.min(state.spacing, state.width / 3);
+  const sd = Math.min(state.spacing, state.depth / 3);
+
+  document.getElementById('spacingInfo').innerHTML = `
+    <div class="row">
+      <span class="label">가로 크기</span>
+      <span class="value mono" style="color:var(--orange)">${state.width.toFixed(2)}m</span>
+    </div>
+    <div class="row">
+      <span class="label">세로 크기</span>
+      <span class="value mono" style="color:var(--cyan)">${state.depth.toFixed(2)}m</span>
+    </div>
+    <div class="row">
+      <span class="label">기준</span>
+      <span class="value" style="color:var(--muted)">${state.area < 14 ? '14m² 미만 → 0.50m' : '14m² 이상 → 0.75m'}</span>
+    </div>
+    <div class="row">
+      <span class="label">가로 벽→포인트</span>
+      <span class="value mono" style="color:var(--green)">${sw.toFixed(2)}m</span>
+    </div>
+    <div class="row">
+      <span class="label">세로 벽→포인트</span>
+      <span class="value mono" style="color:var(--green)">${sd.toFixed(2)}m</span>
+    </div>
+  `;
+
+  const listEl = document.getElementById('pointList');
+  listEl.innerHTML = state.points.map(p => `
+    <div class="point-item">
+      <div class="point-num ${p.id === 3 ? 'center' : 'corner'}">${p.id}</div>
+      <div class="point-info">
+        <div class="name">${p.label}</div>
+        <div class="coords">가로 ${p.x.toFixed(2)}m · 세로 ${p.y.toFixed(2)}m</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Draw diagram
+function drawDiagram(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width;
+  const H = rect.height;
+  const pad = 40;
+
+  // Scale to fit
+  const scaleX = (W - pad * 2) / state.width;
+  const scaleY = (H - pad * 2) / state.depth;
+  const scale = Math.min(scaleX, scaleY);
+  const ox = (W - state.width * scale) / 2;
+  const oy = (H - state.depth * scale) / 2;
+
+  function tx(x) { return ox + x * scale; }
+  function ty(y) { return oy + y * scale; }
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Room boundary
+  ctx.strokeStyle = '#7c5cfc';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(tx(0), ty(0), state.width * scale, state.depth * scale);
+
+  // Room fill
+  ctx.fillStyle = 'rgba(124, 92, 252, 0.06)';
+  ctx.fillRect(tx(0), ty(0), state.width * scale, state.depth * scale);
+
+  // Inner rect (point area)
+  const sw = Math.min(state.spacing, state.width / 3);
+  const sd = Math.min(state.spacing, state.depth / 3);
+  ctx.strokeStyle = 'rgba(34, 204, 136, 0.5)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(tx(sw), ty(sd),
+    (state.width - sw * 2) * scale,
+    (state.depth - sd * 2) * scale
+  );
+  ctx.setLineDash([]);
+
+  // Spacing arrows
+  ctx.fillStyle = '#22cc88';
+  ctx.font = '10px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  // Top spacing
+  ctx.fillText(`${sd.toFixed(2)}m`, tx(state.width / 2), ty(sd / 2) + 4);
+  // Left spacing
+  ctx.save();
+  ctx.translate(tx(sw / 2), ty(state.depth / 2));
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText(`${sw.toFixed(2)}m`, 0, 4);
+  ctx.restore();
+
+  // Diagonal lines (dashed)
+  const p1 = state.points[0]; // 1: 우상
+  const p2 = state.points[1]; // 2: 좌상
+  const p4 = state.points[3]; // 4: 우하
+  const p5 = state.points[4]; // 5: 좌하
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  // 1→5
+  ctx.beginPath();
+  ctx.moveTo(tx(p1.x), ty(p1.y));
+  ctx.lineTo(tx(p5.x), ty(p5.y));
+  ctx.stroke();
+  // 2→4
+  ctx.beginPath();
+  ctx.moveTo(tx(p2.x), ty(p2.y));
+  ctx.lineTo(tx(p4.x), ty(p4.y));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Corner connections
+  ctx.strokeStyle = 'rgba(255,140,50,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(tx(p2.x), ty(p2.y));
+  ctx.lineTo(tx(p1.x), ty(p1.y));
+  ctx.lineTo(tx(p4.x), ty(p4.y));
+  ctx.lineTo(tx(p5.x), ty(p5.y));
+  ctx.closePath();
+  ctx.stroke();
+
+  // Width/Depth labels on walls
+  ctx.fillStyle = 'var(--orange)';
+  ctx.font = 'bold 12px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ff8c32';
+  ctx.fillText(`가로 ${state.width.toFixed(2)}m`, tx(state.width / 2), ty(0) - 8);
+  ctx.fillStyle = '#00d4ff';
+  ctx.save();
+  ctx.translate(tx(state.width) + 16, ty(state.depth / 2));
+  ctx.rotate(Math.PI / 2);
+  ctx.fillText(`세로 ${state.depth.toFixed(2)}m`, 0, 0);
+  ctx.restore();
+
+  // Points
+  state.points.forEach(p => {
+    const x = tx(p.x);
+    const y = ty(p.y);
+    const isCenter = p.id === 3;
+    const r = isCenter ? 14 : 12;
+
+    // Glow
+    ctx.beginPath();
+    ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+    ctx.fillStyle = isCenter ? 'rgba(255,68,102,0.2)' : 'rgba(255,140,50,0.2)';
+    ctx.fill();
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = isCenter ? '#ff4466' : '#ff8c32';
+    ctx.fill();
+
+    // Number
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${isCenter ? 12 : 11}px "Noto Sans KR"`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.id, x, y);
+
+    // Label
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = '9px "Noto Sans KR"';
+    ctx.fillText(p.label, x, y + r + 12);
+  });
+
+  // Area in center
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '11px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${state.area.toFixed(1)}m²`, tx(state.width / 2), ty(state.depth) + 16);
+}
+
+// Step navigation
+function showStep(n) {
+  document.getElementById('page1').style.display = n === 1 ? '' : 'none';
+  document.getElementById('page2').style.display = n === 2 ? '' : 'none';
+  document.getElementById('page3').style.display = n === 3 ? '' : 'none';
+
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById('step' + i);
+    dot.className = 'step-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+    dot.parentElement.querySelector('.step-label').className =
+      'step-label' + (i <= n ? ' active' : '');
+  }
+  document.getElementById('line1').className = 'step-line' + (n >= 2 ? ' active' : '');
+  document.getElementById('line2').className = 'step-line' + (n >= 3 ? ' active' : '');
+}
+
+function goToStep2() {
+  stopCamera();
+  showStep(2);
+  setTimeout(() => drawDiagram('diagramCanvas'), 100);
+}
+
+function goToStep3() {
+  showStep(3);
+  document.getElementById('camWidth').textContent = state.width.toFixed(2) + 'm';
+  document.getElementById('camDepth').textContent = state.depth.toFixed(2) + 'm';
+  document.getElementById('camSpacing').textContent = state.spacing.toFixed(2) + 'm';
+  setTimeout(() => drawDiagram('diagramCanvas2'), 100);
+  startCamera();
+}
+
+// Camera
+let cameraStream = null;
+
+async function startCamera() {
+  try {
+    const video = document.getElementById('cameraVideo');
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    });
+    video.srcObject = cameraStream;
+
+    video.onloadedmetadata = () => {
+      const overlay = document.getElementById('cameraOverlay');
+      overlay.width = video.videoWidth;
+      overlay.height = video.videoHeight;
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      drawCameraOverlay();
+    };
+  } catch (e) {
+    showToast('카메라를 사용할 수 없습니다');
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+}
+
+function drawCameraOverlay() {
+  const overlay = document.getElementById('cameraOverlay');
+  const ctx = overlay.getContext('2d');
+  const W = overlay.width;
+  const H = overlay.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Center crosshair
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 1;
+  const cx = W / 2, cy = H / 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 30, cy); ctx.lineTo(cx + 30, cy);
+  ctx.moveTo(cx, cy - 30); ctx.lineTo(cx, cy + 30);
+  ctx.stroke();
+
+  // Grid (5x5)
+  ctx.strokeStyle = 'rgba(124, 92, 252, 0.15)';
+  for (let i = 1; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(W * i / 5, 0); ctx.lineTo(W * i / 5, H);
+    ctx.moveTo(0, H * i / 5); ctx.lineTo(W, H * i / 5);
+    ctx.stroke();
+  }
+
+  // Point info
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(10, 10, 200, 100);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.fillText(`가로 ${state.width.toFixed(2)}m`, 20, 32);
+  ctx.fillText(`세로 ${state.depth.toFixed(2)}m`, 20, 52);
+  ctx.fillText(`면적 ${state.area.toFixed(1)}m²`, 20, 72);
+  ctx.fillText(`간격 ${state.spacing.toFixed(2)}m`, 20, 92);
+}
+
+// Share
+function shareResult() {
+  const sw = Math.min(state.spacing, state.width / 3);
+  const sd = Math.min(state.spacing, state.depth / 3);
+  const text = `═══════════════════════════
+AMA 측정 결과
+═══════════════════════════
+가로: ${state.width.toFixed(2)}m
+세로: ${state.depth.toFixed(2)}m
+면적: ${state.area.toFixed(1)}m²
+간격: ${state.spacing.toFixed(2)}m (${state.area < 14 ? '14m²미만' : '14m²이상'})
+대각선(1→5): ${state.diagonal.toFixed(2)}m
+
+■ 포인트 좌표 (기준점에서)
+${state.points.map(p =>
+  `  ${p.id}번 (${p.label}): 가로 ${p.x.toFixed(2)}m, 세로 ${p.y.toFixed(2)}m`
+).join('\n')}
+
+■ 벽→포인트 간격
+  가로 방향: ${sw.toFixed(2)}m
+  세로 방향: ${sd.toFixed(2)}m
+═══════════════════════════
+Generated by AMA Web App`;
+
+  if (navigator.share) {
+    navigator.share({ title: 'AMA 측정 결과', text: text });
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('결과가 복사되었습니다'));
+  }
+}
+
+// Reset
+function resetAll() {
+  stopCamera();
+  state = { width: 0, depth: 0, area: 0, spacing: 0, points: [], diagonal: 0 };
+  widthInput.value = '';
+  depthInput.value = '';
+  calcBtn.disabled = true;
+  showStep(1);
+}
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Resize handler
+window.addEventListener('resize', () => {
+  if (state.points.length) {
+    setTimeout(() => {
+      if (document.getElementById('page2').style.display !== 'none')
+        drawDiagram('diagramCanvas');
+      if (document.getElementById('page3').style.display !== 'none')
+        drawDiagram('diagramCanvas2');
+    }, 100);
+  }
+});
+</script>
+</body>
+</html>
